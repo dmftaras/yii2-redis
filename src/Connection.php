@@ -10,9 +10,7 @@ namespace yii\redis;
 use Redis;
 use yii\base\Configurable;
 use yii\db\Exception;
-use yii\helpers\ArrayHelper;
 use yii\helpers\Inflector;
-use yii\helpers\VarDumper;
 
 /**
  * The redis connection class is used to establish a connection to a [redis](https://redis.io/) server.
