@@ -289,6 +289,19 @@ class Connection extends Redis implements Configurable
      */
     public $dataTimeout;
     /**
+     * @var bool session locking
+     */
+    public $locking = false;
+    /**
+     * @var array|null session locking options, for reference see https://github.com/phpredis/phpredis#session-locking
+     * > [
+     * >    'lock_expire'       => 30,
+     * >    'lock_wait_time'    => 2000,
+     * >    'lock_retries'      => 10
+     * > ]
+     */
+    public $lockingOptions;
+    /**
      * @var boolean Send sockets over SSL protocol. Default state is false.
      * @since 2.0.12
      */
@@ -571,6 +584,13 @@ class Connection extends Redis implements Configurable
      */
     public function open( $host = null, $port = null, $timeout = null, $reserved = null, $retry_interval = 0, $read_timeout = 0 )
     {
+        if ($this->locking) {
+            ini_set('redis.session.locking_enabled', 1);
+            if (isset($this->lockingOptions['lock_expire'])) ini_set('redis.session.lock_expire', $this->lockingOptions['lock_expire']);
+            if (isset($this->lockingOptions['lock_wait_time'])) ini_set('redis.session.lock_wait_time', $this->lockingOptions['lock_wait_time']);
+            if (isset($this->lockingOptions['lock_retries'])) ini_set('redis.session.lock_retries', $this->lockingOptions['lock_retries']);
+        }
+
         if ($this->unixSocket !== null) {
             $isConnected = $this->pconnect($this->unixSocket);
         } else {
