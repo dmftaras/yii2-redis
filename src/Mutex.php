@@ -95,7 +95,7 @@ class Mutex extends \yii\mutex\Mutex
     public function init()
     {
         parent::init();
-        $this->redis = Instance::ensure($this->redis, Connection::className());
+        $this->redis = Instance::ensure($this->redis, Connection::class);
         if ($this->keyPrefix === null) {
             $this->keyPrefix = substr(md5(Yii::$app->id), 0, 5);
         }

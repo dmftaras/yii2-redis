@@ -172,7 +172,7 @@ class Cache extends \yii\caching\Cache
     public function init()
     {
         parent::init();
-        $this->redis = Instance::ensure($this->redis, Connection::className());
+        $this->redis = Instance::ensure($this->redis, Connection::class);
     }
 
     /**
@@ -386,7 +386,7 @@ class Cache extends \yii\caching\Cache
         $replicas = $this->replicas;
         shuffle($replicas);
         $config = array_shift($replicas);
-        $this->_replica = Instance::ensure($config, Connection::className());
+        $this->_replica = Instance::ensure($config, Connection::class);
         return $this->_replica;
     }
 }

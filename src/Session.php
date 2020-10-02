@@ -98,7 +98,7 @@ class Session extends \yii\web\Session
             if (isset($this->lockingOptions['lock_wait_time'])) ini_set('redis.session.lock_wait_time', $this->lockingOptions['lock_wait_time']);
             if (isset($this->lockingOptions['lock_retries'])) ini_set('redis.session.lock_retries', $this->lockingOptions['lock_retries']);
         }
-        $this->redis = Instance::ensure($this->redis, Connection::className());
+        $this->redis = Instance::ensure($this->redis, Connection::class);
         if ($this->keyPrefix === null) {
             $this->keyPrefix = substr(md5(Yii::$app->id), 0, 5);
         }
