@@ -71,7 +71,19 @@ class Session extends \yii\web\Session
      * static value if the cached data needs to be shared among multiple applications.
      */
     public $keyPrefix;
-
+    /**
+     * @var bool session locking
+     */
+    public $locking = false;
+    /**
+     * @var array|null session locking options, for reference see https://github.com/phpredis/phpredis#session-locking
+     * > [
+     * >    'lock_expire'       => 30,
+     * >    'lock_wait_time'    => 2000,
+     * >    'lock_retries'      => 10
+     * > ]
+     */
+    public $lockingOptions;
 
     /**
      * Initializes the redis Session component.
@@ -80,6 +92,12 @@ class Session extends \yii\web\Session
      */
     public function init()
     {
+        if ($this->locking) {
+            ini_set('redis.session.locking_enabled', 1);
+            if (isset($this->lockingOptions['lock_expire'])) ini_set('redis.session.lock_expire', $this->lockingOptions['lock_expire']);
+            if (isset($this->lockingOptions['lock_wait_time'])) ini_set('redis.session.lock_wait_time', $this->lockingOptions['lock_wait_time']);
+            if (isset($this->lockingOptions['lock_retries'])) ini_set('redis.session.lock_retries', $this->lockingOptions['lock_retries']);
+        }
         $this->redis = Instance::ensure($this->redis, Connection::className());
         if ($this->keyPrefix === null) {
             $this->keyPrefix = substr(md5(Yii::$app->id), 0, 5);
