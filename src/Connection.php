@@ -678,6 +678,6 @@ class Connection extends Redis implements Configurable
     {
         $this->open();
 
-        return $this->rawCommand($name, $params);
+        return $this->rawCommand($name, ...$params);
     }
 }
