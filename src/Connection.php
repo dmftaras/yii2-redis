@@ -557,8 +557,10 @@ class Connection extends Component
     public function open( $host = null, $port = null, $timeout = null, $reserved = null, $retry_interval = 0, $read_timeout = 0 )
     {
         if (!$this->_connection) {
+            $this->_connection = new Redis();
+
             if ($this->unixSocket !== null) {
-                $isConnected = $this->connect($this->unixSocket);
+                $isConnected = $this->_connection->connect($this->unixSocket);
             } else {
                 if (is_null($host)) {
                     $host = ($this->useSSL ? 'tls://' : '') . $this->hostname;
@@ -575,7 +577,7 @@ class Connection extends Component
                 if (!$read_timeout) {
                     $read_timeout = $this->dataTimeout;
                 }
-                $isConnected = $this->connect($host, $port, $timeout, $reserved, $retry_interval, $read_timeout);
+                $isConnected = $this->_connection->connect($host, $port, $timeout, $reserved, $retry_interval, $read_timeout);
             }
 
             if ($isConnected === false) {
@@ -583,11 +585,11 @@ class Connection extends Component
             }
 
             if ($this->password !== null) {
-                $this->auth($this->password);
+                $this->_connection->auth($this->password);
             }
 
             if ($this->database !== null) {
-                $this->select($this->database);
+                $this->_connection->select($this->database);
             }
         }
     }
