@@ -543,6 +543,7 @@ class Connection extends Redis implements Configurable
     {
         if (!empty($config)) {
             \Yii::configure($this, $config);
+            $this->open(); // open connection
         }
     }
 
@@ -683,8 +684,6 @@ class Connection extends Redis implements Configurable
      */
     public function executeCommand($name, $params = [])
     {
-        $this->open();
-
         return $this->rawCommand($name, ...$params);
     }
 }
