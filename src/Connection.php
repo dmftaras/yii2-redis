@@ -8,7 +8,7 @@
 namespace yii\redis;
 
 use Redis;
-use yii\base\Configurable;
+use yii\base\Component;
 use yii\db\Exception;
 use yii\helpers\Inflector;
 
@@ -246,7 +246,7 @@ use yii\helpers\Inflector;
  * @author Carsten Brandt <mail@cebe.cc>
  * @since 2.0
  */
-class Connection extends Redis implements Configurable
+class Connection extends Component
 {
     /**
      * @event Event an event that is triggered after a DB connection is established
@@ -526,26 +526,9 @@ class Connection extends Redis implements Configurable
     ];
 
     /**
-     * Constructor.
-     * The default implementation does two things:
-     *
-     * - Initializes the object with the given configuration `$config`.
-     * - Call [[init()]].
-     *
-     * If this method is overridden in a child class, it is recommended that
-     *
-     * - the last parameter of the constructor is a configuration array, like `$config` here.
-     * - call the parent implementation at the end of the constructor.
-     *
-     * @param array $config name-value pairs that will be used to initialize the object properties
+     * @var Redis|null php redis client instance
      */
-    public function __construct($config = [])
-    {
-        if (!empty($config)) {
-            \Yii::configure($this, $config);
-            $this->open(); // open connection
-        }
-    }
+    private $_connection;
 
     /**
      * Closes the connection when this component is being serialized.
@@ -563,7 +546,7 @@ class Connection extends Redis implements Configurable
      */
     public function getIsActive()
     {
-        return true; // test
+        return $this->_connection ? true : false;
     }
 
     /**
@@ -573,37 +556,39 @@ class Connection extends Redis implements Configurable
      */
     public function open( $host = null, $port = null, $timeout = null, $reserved = null, $retry_interval = 0, $read_timeout = 0 )
     {
-        if ($this->unixSocket !== null) {
-            $isConnected = $this->connect($this->unixSocket);
-        } else {
-            if(is_null($host)){
-                $host = ($this->useSSL ? 'tls://' : '') . $this->hostname;
+        if (!$this->_connection) {
+            if ($this->unixSocket !== null) {
+                $isConnected = $this->connect($this->unixSocket);
+            } else {
+                if (is_null($host)) {
+                    $host = ($this->useSSL ? 'tls://' : '') . $this->hostname;
+                }
+                if (is_null($port)) {
+                    $port = $this->port;
+                }
+                if (is_null($timeout)) {
+                    $timeout = $this->connectionTimeout;
+                }
+                if (!$retry_interval) {
+                    $retry_interval = $this->retryInterval;
+                }
+                if (!$read_timeout) {
+                    $read_timeout = $this->dataTimeout;
+                }
+                $isConnected = $this->connect($host, $port, $timeout, $reserved, $retry_interval, $read_timeout);
             }
-            if(is_null($port)){
-                $port = $this->port;
-            }
-            if(is_null($timeout)){
-                $timeout = $this->connectionTimeout;
-            }
-            if(!$retry_interval) {
-                $retry_interval = $this->retryInterval;
-            }
-            if(!$read_timeout) {
-                $read_timeout = $this->dataTimeout;
-            }
-            $isConnected = $this->connect($host, $port, $timeout, $reserved, $retry_interval, $read_timeout);
-        }
 
-        if ($isConnected === false) {
-            throw new \RedisException('Connect to redis server error.');
-        }
+            if ($isConnected === false) {
+                throw new \RedisException('Connect to redis server error.');
+            }
 
-        if ($this->password !== null) {
-            $this->auth($this->password);
-        }
+            if ($this->password !== null) {
+                $this->auth($this->password);
+            }
 
-        if ($this->database !== null) {
-            $this->select($this->database);
+            if ($this->database !== null) {
+                $this->select($this->database);
+            }
         }
     }
 
@@ -684,6 +669,8 @@ class Connection extends Redis implements Configurable
      */
     public function executeCommand($name, $params = [])
     {
-        return $this->rawCommand($name, ...$params);
+        $this->open();
+
+        return $this->_connection->rawCommand($name, ...$params);
     }
 }
