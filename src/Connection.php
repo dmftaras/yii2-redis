@@ -294,26 +294,6 @@ class Connection extends Redis implements Configurable
      */
     public $useSSL = false;
     /**
-     * @var integer Bitmask field which may be set to any combination of connection flags passed to [stream_socket_client()](https://www.php.net/manual/en/function.stream-socket-client.php).
-     * Currently the select of connection flags is limited to `STREAM_CLIENT_CONNECT` (default), `STREAM_CLIENT_ASYNC_CONNECT` and `STREAM_CLIENT_PERSISTENT`.
-     *
-     * > Warning: `STREAM_CLIENT_PERSISTENT` will make PHP reuse connections to the same server. If you are using multiple
-     * > connection objects to refer to different redis [[$database|databases]] on the same [[port]], redis commands may
-     * > get executed on the wrong database. `STREAM_CLIENT_PERSISTENT` is only safe to use if you use only one database.
-     * >
-     * > You may still use persistent connections in this case when disambiguating ports as described
-     * > in [a comment on the PHP manual](https://www.php.net/manual/en/function.stream-socket-client.php#105393)
-     * > e.g. on the connection used for session storage, specify the port as:
-     * >
-     * > ```php
-     * > 'port' => '6379/session'
-     * > ```
-     *
-     * @see https://www.php.net/manual/en/function.stream-socket-client.php
-     * @since 2.0.5
-     */
-    public $socketClientFlags = STREAM_CLIENT_CONNECT;
-    /**
      * @var integer The number of times a command execution should be retried when a connection failure occurs.
      * This is used in [[executeCommand()]] when a [[SocketException]] is thrown.
      * Defaults to 0 meaning no retries on failure.
@@ -567,7 +547,7 @@ class Connection extends Redis implements Configurable
     /**
      * Establishes a DB connection.
      * It does nothing if a DB connection has already been established.
-     * @throws RedisException if connection fails
+     * @throws \RedisException if connection fails
      */
     public function open( $host = null, $port = null, $timeout = null, $reserved = null, $retry_interval = 0, $read_timeout = 0 )
     {
@@ -575,7 +555,7 @@ class Connection extends Redis implements Configurable
             $isConnected = $this->pconnect($this->unixSocket);
         } else {
             if(is_null($host)){
-                $host = $this->hostname;
+                $host = ($this->useSSL ? 'tls://' : '') . $this->hostname;
             }
             if(is_null($port)){
                 $port = $this->port;
@@ -583,11 +563,17 @@ class Connection extends Redis implements Configurable
             if(is_null($timeout)){
                 $timeout = $this->connectionTimeout;
             }
-            $isConnected = $this->pconnect($host, $port, $timeout, null, $retry_interval);
+            if(!$retry_interval) {
+                $retry_interval = $this->retryInterval;
+            }
+            if(!$read_timeout) {
+                $read_timeout = $this->dataTimeout;
+            }
+            $isConnected = $this->pconnect($host, $port, $timeout, $reserved, $retry_interval, $read_timeout);
         }
 
         if ($isConnected === false) {
-            throw new RedisException('Connect to redis server error.');
+            throw new \RedisException('Connect to redis server error.');
         }
 
         if ($this->password !== null) {
