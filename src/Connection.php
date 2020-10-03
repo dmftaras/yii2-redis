@@ -552,7 +552,7 @@ class Connection extends Redis implements Configurable
     public function open( $host = null, $port = null, $timeout = null, $reserved = null, $retry_interval = 0, $read_timeout = 0 )
     {
         if ($this->unixSocket !== null) {
-            $isConnected = $this->pconnect($this->unixSocket);
+            $isConnected = $this->connect($this->unixSocket);
         } else {
             if(is_null($host)){
                 $host = ($this->useSSL ? 'tls://' : '') . $this->hostname;
@@ -569,7 +569,7 @@ class Connection extends Redis implements Configurable
             if(!$read_timeout) {
                 $read_timeout = $this->dataTimeout;
             }
-            $isConnected = $this->pconnect($host, $port, $timeout, $reserved, $retry_interval, $read_timeout);
+            $isConnected = $this->connect($host, $port, $timeout, $reserved, $retry_interval, $read_timeout);
         }
 
         if ($isConnected === false) {
