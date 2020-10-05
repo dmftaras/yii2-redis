@@ -673,6 +673,17 @@ class Connection extends Component
     {
         $this->open();
 
+        // only string / integer / float types are supported by phpredis, thus bool -> int
+        if ($params) {
+            $params = array_map(function($value) {
+                if (is_bool($value)) {
+                    return (int)$value;
+                } else {
+                    return $value;
+                }
+            }, $params);
+        }
+
         return $this->_connection->rawCommand($name, ...$params);
     }
 }
